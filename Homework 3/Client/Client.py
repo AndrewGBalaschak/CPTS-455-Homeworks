@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 import sys
 sys.path.append('../Homework 3')
 import File_Transfer
+import Commands
 
 # The server address and port number to connect to
 SERVER_ADDRESS = '127.0.0.1' 
@@ -26,7 +27,7 @@ def help():
     print("Type [q] to quit")
 
 # Print help
-help()
+Commands.help()
 
 # Communicate with the server using the key
 running = True
@@ -44,7 +45,7 @@ while running:
 
         # Check if the message is the help command
         elif message == 'help':
-            help()
+            Commands.help()
 
         # Check if the message is a file name
         elif message.startswith("File:") or message.startswith("file:"):

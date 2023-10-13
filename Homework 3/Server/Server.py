@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 import sys
 sys.path.append('../Homework 3')
 import File_Transfer
+import Commands
 
 # The port number to listen on
 PORT = 4949
@@ -30,13 +31,8 @@ listen_socket.close()
 key = Fernet.generate_key()
 client_socket.sendall(key)
 
-def help():
-    print("Type a message and press [Enter] to send.")
-    print("Type [File:FileName] to send a file")
-    print("Type [q] to quit")
-
 # Print help
-help()
+Commands.help()
 
 # Communicate with the client using the key
 running = True
@@ -76,7 +72,7 @@ while running:
 
         # Check if the message is the help command
         elif message == 'help':
-            help()
+            Commands.help()
 
         # Check if the message is a file name
         elif message.startswith("File:") or message.startswith("file:"):
