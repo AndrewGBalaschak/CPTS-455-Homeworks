@@ -10,10 +10,10 @@ def send_file(socket, file_path):
     file_name = os.path.basename(file_path)
 
     # Send the file size and the file name to the socket
-    socket.sendall(str(file_size).encode() + b':' + file_name.encode())
+    socket.sendall(str(file_size).encode() + b":" + file_name.encode())
 
     # Open the file in binary mode
-    with open(file_path, 'rb') as f_in:
+    with open(file_path, "rb") as f_in:
         # Read the file contents
         data = f_in.read()
 
@@ -31,19 +31,23 @@ def send_file(socket, file_path):
     f_in.close()
 
 # Receive a file from a socket
-def receive_file(socket):
+def receive_file(socket, file_path):
     # Receive the file size, file name, and checksum from the socket
     data = socket.recv(BUFFER_SIZE).decode()
-    split = data.split(':')
+    split = data.split(":")
     file_size = int(split[0])
-    file_name = split[1]
+    basename = split[1]
     checksum = socket.recv(BUFFER_SIZE).decode()
     print(f"Size: {file_size} bytes")
-    print(f"Name: {file_name}")
+    print(f"Name: {basename}")
     print(f"Received checksum:{checksum}")
 
+    # Put the file in the correct location
+    # I know this is hacky but I just want it to work the way I want it to work
+    file_path = os.path.join(file_path, basename)
+
     # Write the file in binary mode
-    with open(file_name, 'wb') as f_out:
+    with open(file_path, "wb") as f_out:
         # Initialize a variable to store the received data size
         received_size = 0
         print("File open success")
@@ -63,7 +67,7 @@ def receive_file(socket):
         f_out.close()
 
     # Open the file in binary mode
-    with open(file_name, 'rb') as f_in:
+    with open(file_path, "rb") as f_in:
         # Read the file contents
         data = f_in.read()
 
@@ -72,15 +76,15 @@ def receive_file(socket):
 
         # Compare the computed checksum with the received checksum
         if computed_checksum == checksum:
-            print(f"File {file_name} received successfully.")
+            print(f"File {basename} received successfully.")
         
-        # If they don't match, print an error message and delete the file
+        # If they don"t match, print an error message and delete the file
         else:
-            print(f"File {file_name} corrupted during transmission.")
+            print(f"File {basename} corrupted during transmission.")
             print(f"Checksum mismatch: {computed_checksum} != {checksum}")
 
-            # This part doesn't work
-            # os.remove(file_name)
+            # This part doesn"t work
+            # os.remove(basename)
     
     # Close the file
     f_in.close()
