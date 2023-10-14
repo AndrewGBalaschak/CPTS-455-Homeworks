@@ -24,7 +24,7 @@ def send_file(socket, file_path):
         socket.sendall(checksum.encode())
         print(f"Sent checksum: {checksum}")
 
-        # Send the encrypted data to the socket
+        # Send the data to the socket
         socket.sendall(data)
 
     # Close the file

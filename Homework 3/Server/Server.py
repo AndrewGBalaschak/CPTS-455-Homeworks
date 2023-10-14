@@ -16,7 +16,7 @@ BUFFER_SIZE = File_Transfer.BUFFER_SIZE
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 context.load_cert_chain(certfile="Server\server.crt", keyfile="Server\server.key")
 
-# Create a socket for listening 
+# Create a socket for listening
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Bind the socket to an address and a port
 listen_socket.bind((HOST, PORT))
