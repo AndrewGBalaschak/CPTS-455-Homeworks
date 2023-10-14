@@ -1,57 +1,60 @@
 import socket
+import ssl
 import os
-from cryptography.fernet import Fernet
 import sys
 sys.path.append('../Homework 3')
 import File_Transfer
 import Commands
 
-# The port number to listen on
+# The host and port number to listen on
+HOST = 'localhost'
 PORT = 4949
 # The size of the buffer for receiving data
 BUFFER_SIZE = File_Transfer.BUFFER_SIZE
 
+# Create SSL context
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(certfile='Server\server.crt', keyfile='Server\server.key')
 
-# Create a socket for listening
+# Create a socket for listening 
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Bind the socket to an address and a port
-listen_socket.bind(('', PORT))
+listen_socket.bind((HOST, PORT))
 # Listen for incoming connections
 listen_socket.listen()
-print(f'Server is listening on port {PORT}')
+print(f'Server is listening on port {HOST}:{PORT}')
 
 # Accept a connection from a client
-client_socket, client_address = listen_socket.accept()
+server_socket, client_address = listen_socket.accept()
 print(f'Server accepted a connection from {client_address}')
 
 # Close the listening socket
 listen_socket.close()
 
-# Generate a new encryption key for this session and send it to the client
-key = Fernet.generate_key()
-client_socket.sendall(key)
+# Wrap the socket in a Secure Socket Layer
+server_socket = context.wrap_socket(server_socket, server_side = True)
 
 # Print help
 Commands.help()
 
-# Communicate with the client using the key
+# Communicate with the client
 running = True
 while running:
     # RECEIVE MESSAGES
     # Receive an encrypted message from the client
-    encrypted_data = client_socket.recv(BUFFER_SIZE)
-    if not encrypted_data:
+    data = server_socket.recv(BUFFER_SIZE)
+    if not data:
         print('Client closed the connection')
         break
 
-    # Decrypt the message from bytes to string using the key
-    message = Fernet(key).decrypt(encrypted_data).decode()
+    # Decode the message from bytes to a string
+    message = data.decode()
     
-    # Check if the message is a file name
+    # Check if the message is for a file transfer
     if message.startswith("File:") or message.startswith("file:"):
-        # Receive the file from the client using the key
+        # Receive the file from the client
         print(f'Receiving the file: {message[5:]}')
-        File_Transfer.receive_file(client_socket, key)
+        File_Transfer.receive_file(server_socket)
         print(f'Received the file: {message[5:]}')
         continue
     
@@ -82,11 +85,10 @@ while running:
             # Make sure file exists
             if os.path.isfile(file_name):
                 # Tell the client we are sending a file
-                encrypted_data = Fernet(key).encrypt(message.encode())
-                client_socket.sendall(encrypted_data)
+                server_socket.sendall(message.encode())
 
                 # Send the file
-                File_Transfer.send_file(client_socket, file_name, key)
+                File_Transfer.send_file(server_socket, file_name)
                 # Print a confirmation message
                 print(f'Sent {file_name} to client.')
                 sent = True
@@ -96,11 +98,9 @@ while running:
 
         # Regular message
         else:
-            # Encode and encrypt the message from string to bytes using the key
-            encrypted_data = Fernet(key).encrypt(message.encode())
-            # Send the encrypted message to the server using the key
-            client_socket.sendall(encrypted_data)
+            # Send the message to the client
+            server_socket.sendall(message.encode())
             sent = True
 
 # Close the socket
-client_socket.close()
+server_socket.close()

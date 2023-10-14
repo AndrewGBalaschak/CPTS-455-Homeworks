@@ -1,35 +1,42 @@
 import socket
+import ssl
 import os
-from cryptography.fernet import Fernet
 import sys
+import threading
 sys.path.append('../Homework 3')
 import File_Transfer
 import Commands
 
-# The server address and port number to connect to
-SERVER_ADDRESS = '127.0.0.1' 
+# The host and port number to connect to
+HOST = 'localhost'
 PORT = 4949 
 # The size of the buffer for receiving data
 BUFFER_SIZE = File_Transfer.BUFFER_SIZE
 
-# Create a socket for connecting
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Connect to the server
-server_socket.connect((SERVER_ADDRESS, PORT))
-print(f'Client connected to {SERVER_ADDRESS}:{PORT}')
+# Create SSL context
+context = ssl.create_default_context()
+context.load_verify_locations('Server\server.crt')
+context.check_hostname = True
+context.verify_mode = ssl.CERT_REQUIRED
 
-# Receive a new encryption key from the server for this session
-key = server_socket.recv(BUFFER_SIZE)
+# Create a socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def help():
-    print("Type a message and press [Enter] to send.")
-    print("Type [File:FileName] to send a file")
-    print("Type [q] to quit")
+# Try connecting to the server
+try:
+    client_socket.connect((HOST, PORT))
+    print(f'Client connected to {HOST}:{PORT}')
+except:
+    print("Server refused to connect.")
+    sys.exit()
+
+# Wrap the socket in a Secure Socket Layer
+client_socket = context.wrap_socket(client_socket, server_side = False, server_hostname = HOST)
 
 # Print help
 Commands.help()
 
-# Communicate with the server using the key
+# Communicate with the server
 running = True
 while running:
     # SEND MESSAGES
@@ -58,13 +65,13 @@ while running:
             # Make sure file exists
             if os.path.isfile(file_path):
                 # Tell the server we are sending a file
-                encrypted_data = Fernet(key).encrypt(message.encode())
-                server_socket.sendall(encrypted_data)
+                client_socket.sendall(message.encode())
 
                 # Send the file
-                File_Transfer.send_file(server_socket, file_path, key)
+                File_Transfer.send_file(client_socket, file_path)
+
                 # Print a confirmation message
-                print(f'Sent {basename} to {SERVER_ADDRESS}:{PORT}')
+                print(f'Sent {basename} to {HOST}:{PORT}')
                 sent = True
             else:
                 # Print an error message if the file does not exist
@@ -72,29 +79,27 @@ while running:
 
         # Regular message
         else:
-            # Encode and encrypt the message from string to bytes using the key
-            encrypted_data = Fernet(key).encrypt(message.encode())
-            # Send the encrypted message to the server using the key
-            server_socket.sendall(encrypted_data)
+            # Send the message to the server
+            client_socket.sendall(message.encode())
             sent = True
 
 
     # RECEIVE MESSAGES
-    # Receive an encrypted message from the server using the key
-    encrypted_data = server_socket.recv(BUFFER_SIZE)
-    if not encrypted_data:
+    # Receive an encrypted message from the server
+    data = client_socket.recv(BUFFER_SIZE)
+    if not data:
         print('Server closed the connection')
         running = False
         break
 
-    # Decrypt the message from bytes to string using the key
-    message = Fernet(key).decrypt(encrypted_data).decode()
+    # Decrypt the message from bytes to string
+    message = data.decode()
 
     # Check if the message is a file name
     if message.startswith("File:") or message.startswith("file:"):
-        # Receive the file from the server using the key
+        # Receive the file from the server
         print(f'Receiving the file: {message[5:]}')
-        File_Transfer.receive_file(server_socket, key)
+        File_Transfer.receive_file(client_socket)
         print(f'Received the file: {message[5:]}')
         continue
 
@@ -103,4 +108,4 @@ while running:
         print(f'Server: {message}')
 
 # Close the socket
-server_socket.close()
+client_socket.close()
