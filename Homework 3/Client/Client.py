@@ -13,7 +13,7 @@ PORT = 4949
 BUFFER_SIZE = File_Transfer.BUFFER_SIZE
 
 # Create SSL context
-context = ssl.create_default_context()
+context = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
 context.load_verify_locations("Server\server.crt")
 context.check_hostname = True
 context.verify_mode = ssl.CERT_REQUIRED

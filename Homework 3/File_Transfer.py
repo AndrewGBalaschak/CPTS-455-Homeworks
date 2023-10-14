@@ -50,7 +50,7 @@ def receive_file(socket, file_path):
     with open(file_path, "wb") as f_out:
         # Initialize a variable to store the received data size
         received_size = 0
-        print("File open success")
+        print("File open success.")
 
         # Loop until all the data is received and written
         while received_size < file_size:
