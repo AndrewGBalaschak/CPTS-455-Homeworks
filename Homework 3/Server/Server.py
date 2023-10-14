@@ -1,6 +1,6 @@
+import os
 import socket
 import ssl
-import os
 import sys
 sys.path.append("../Homework 3")
 import File_Transfer

@@ -66,6 +66,9 @@ def receive_file(socket, file_path):
         # Close the file
         f_out.close()
 
+    # FILE VERIFICATION
+    computed_checksum = ""
+
     # Open the file in binary mode
     with open(file_path, "rb") as f_in:
         # Read the file contents
@@ -74,17 +77,15 @@ def receive_file(socket, file_path):
         # Compute the checksum of the data using SHA256
         computed_checksum = hashlib.sha256(data).hexdigest()
 
-        # Compare the computed checksum with the received checksum
-        if computed_checksum == checksum:
-            print(f"File {basename} received successfully.")
-        
-        # If they don"t match, print an error message and delete the file
-        else:
-            print(f"File {basename} corrupted during transmission.")
-            print(f"Checksum mismatch: {computed_checksum} != {checksum}")
-
-            # This part doesn"t work
-            # os.remove(basename)
-    
     # Close the file
     f_in.close()
+
+    # Compare the computed checksum with the received checksum
+    if computed_checksum == checksum:
+        print(f"File {basename} received successfully.")
+    
+    # If they don"t match, print an error message and delete the file
+    else:
+        print(f"File {basename} corrupted during transmission.")
+        print(f"Checksum mismatch: {computed_checksum} != {checksum}")
+        os.remove(file_path)

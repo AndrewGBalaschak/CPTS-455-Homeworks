@@ -1,6 +1,6 @@
+import os
 import socket
 import ssl
-import os
 import sys
 sys.path.append("../Homework 3")
 import File_Transfer
@@ -13,7 +13,7 @@ PORT = 4949
 BUFFER_SIZE = File_Transfer.BUFFER_SIZE
 
 # Create SSL context
-context = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 context.load_verify_locations("Server\server.crt")
 context.check_hostname = True
 context.verify_mode = ssl.CERT_REQUIRED
